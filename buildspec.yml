@@ -1,0 +1,29 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto11
+    commands:
+      - echo Installing Maven dependencies...
+      - mvn clean install
+      - echo Installing JFrog CLI...
+      - curl -fL https://getcli.jfrog.io | sh
+      - mv jfrog /usr/local/bin/
+      - echo Configuring JFrog...
+      - jfrog rt config --url=https://<your-org>.jfrog.io/artifactory --user=$ART_USER --password=$ART_PASS --interactive=false
+
+  build:
+    commands:
+      - echo Building the .jar file...
+      - mvn clean package
+
+  post_build:
+    commands:
+      - echo Uploading .jar to JFrog Artifactory...
+      - jfrog rt upload "target/*.jar" "libs-release-local/myapp/" --build-name=my-java-build --build-number=1
+      - jfrog rt build-publish my-java-build 1
+
+artifacts:
+  files:
+    - target/*.jar
